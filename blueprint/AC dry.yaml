@@ -1,0 +1,51 @@
+blueprint:
+  name: '空调干燥'
+  description: '用于空调关闭制冷或除湿后，使其继续工作在“仅送风”模式一段时间以干燥室内蒸发器'
+  domain: automation
+  input:
+    climate_entity:
+      name: '空调'
+      description: '选择空调实体'
+      selector:
+        entity:
+          domain:
+          - climate
+          multiple: false
+    trigger_mode:
+      name: '触发工作模式'
+      description: '选择关闭前的工作模式'
+      default: [cool, dry]
+      selector:
+        select:
+          options:
+          - auto
+          - heat_cool
+          - heat
+          - cool
+          - dry
+          custom_value: false
+          sort: false
+          multiple: true
+    fan_mode_duration:
+      name: '干燥时间'
+      description: '选择仅吹风模式工作时间，时间结束后关机'
+      selector:
+        duration:
+
+trigger:
+  - platform: state
+    entity_id: !input climate_entity
+    from: !input trigger_mode
+    to: 'off'
+
+action:
+  - service: climate.set_hvac_mode
+    data:
+      hvac_mode: fan_only
+    target:
+      entity_id: !input climate_entity
+  - delay: !input fan_mode_duration
+  - service: climate.turn_off
+    target:
+      entity_id: !input climate_entity
+mode: single
